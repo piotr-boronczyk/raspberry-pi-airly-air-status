@@ -1,5 +1,6 @@
 package leds
 
+import PollutionType
 import com.pi4j.io.gpio.GpioFactory
 import com.pi4j.io.gpio.GpioPinDigitalOutput
 import com.pi4j.io.gpio.RaspiPin
@@ -13,7 +14,7 @@ object CustGpio {
 
     var animationActive = false
 
-    var dataLeds: List<GpioPinDigitalOutput> = listOf(
+    val dataLeds: List<GpioPinDigitalOutput> = listOf(
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00),
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01),
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02),
@@ -21,6 +22,11 @@ object CustGpio {
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04),
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_05),
         gpio.provisionDigitalOutputPin(RaspiPin.GPIO_06)
+    )
+
+    val pollutionTypeLeds: List<Pair<PollutionType, GpioPinDigitalOutput>> = listOf(
+        PollutionType.PM25 to gpio.provisionDigitalOutputPin(RaspiPin.GPIO_08),
+        PollutionType.PM10 to gpio.provisionDigitalOutputPin(RaspiPin.GPIO_09)
     )
 
     /*
@@ -55,6 +61,16 @@ object CustGpio {
         }
     }
 
+    fun setPollutionTypeLeds(pollutionType: PollutionType) {
+        pollutionTypeLeds.forEach {
+            it.second.low()
+        }
+        when (pollutionType) {
+            PollutionType.PM25 -> pollutionTypeLeds.single { it.first == pollutionType }.second.high()
+            PollutionType.PM10 -> pollutionTypeLeds.single { it.first == pollutionType }.second.high()
+        }
+    }
+
     suspend fun startLoadingAnimation(): Boolean {
         logger.debug { "starting animation" }
         animationActive = true
@@ -81,9 +97,12 @@ object CustGpio {
         animationActive = false
     }
 
+
     fun getCurrentStatus(): Int {
         return dataLeds.filter { it.isHigh }.size
     }
 
+
     val settingsButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_07)
+
 }
